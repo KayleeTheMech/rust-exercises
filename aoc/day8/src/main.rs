@@ -178,6 +178,28 @@ fn get_hidden_matrix_in_direction(
     hidden_matrix
 }
 
+fn viewing_distance(
+    from_tree: (usize, usize),
+    tree_matrix: &Vec<Vec<u8>>,
+    direction: Direction,
+) -> u32 {
+    let mut cursor = from_tree;
+    if cursor_at_edge(cursor, tree_matrix) {
+        return 0;
+    }
+    let next_cursor = match direction {
+        Direction::DOWNWARDS => (cursor.0 + 1, cursor.1),
+        Direction::UPWARDS => (cursor.0 - 1, cursor.1),
+        Direction::LEFT => (cursor.0, cursor.1 - 1),
+        Direction::RIGHT => (cursor.0, cursor.1 + 1),
+    };
+    if tree_matrix[cursor.0][cursor.1] > tree_matrix[next_cursor.0][next_cursor.1] {
+        return viewing_distance(next_cursor, tree_matrix, direction) + 1;
+    } else {
+        return 1;
+    }
+}
+
 #[test]
 fn test_get_trees() {
     let input = "30373\n25512\n65332\n33549\n35390\n".to_string();
@@ -193,6 +215,24 @@ fn test_get_trees() {
 }
 
 #[test]
+fn test_viewing_distance() {
+    let input = "30373\n25512\n65332\n33549\n35390\n".to_string();
+    let trees = get_tree_matrix(&input).unwrap();
+    let reference: Vec<Vec<u8>> = vec![
+        vec![3, 0, 3, 7, 3],
+        vec![2, 5, 5, 1, 2],
+        vec![6, 5, 3, 3, 2],
+        vec![3, 3, 5, 4, 9],
+        vec![3, 5, 3, 9, 0],
+    ];
+    assert_eq!(trees, reference);
+    assert_eq!(1, viewing_distance((1, 2), &trees, Direction::UPWARDS));
+    assert_eq!(2, viewing_distance((1, 2), &trees, Direction::DOWNWARDS));
+    assert_eq!(1, viewing_distance((1, 2), &trees, Direction::LEFT));
+    assert_eq!(2, viewing_distance((1, 2), &trees, Direction::RIGHT));
+}
+
+#[test]
 fn test_find_hidden_ones() {
     let input = "30373\n25512\n65332\n33549\n35390\n".to_string();
     let trees = get_tree_matrix(&input).unwrap();
@@ -204,13 +244,11 @@ fn test_find_hidden_ones() {
         vec![false, false, false, false, false],
     ];
 
-
     assert_eq!(
         get_hidden_matrix_in_direction(&trees, Direction::RIGHT),
         reference
     )
 }
-
 
 fn main() {
     let filepath = Path::new("./input.txt");
