@@ -1,4 +1,6 @@
+use and::and_2d;
 use std::{fs, path::Path, vec};
+pub mod and;
 
 enum Direction {
     DOWNWARDS,
@@ -8,7 +10,7 @@ enum Direction {
 }
 
 fn determine_x_y_width(content: &String) -> Option<(usize, usize)> {
-    let mut width = content
+    let width = content
         .trim_end_matches("\n")
         .split("\n")
         .next()?
@@ -176,51 +178,8 @@ fn get_hidden_matrix_in_direction(
     hidden_matrix
 }
 
-// vectors of equal size
-fn and_1d(vector1: &Vec<bool>, vector2: &Vec<bool>) -> Vec<bool> {
-    let mut result = vec![false; vector1.len()];
-    for ((resref, val1), val2) in result.iter_mut().zip(vector1).zip(vector2) {
-        *resref = val1 & val2;
-    }
-    result
-}
-
 #[test]
-fn test_and_1d() {
-    let vec1 = vec![true, false, false];
-    let vec2 = vec![true, false, true];
-    let result = and_1d(&vec1, &vec2);
-    assert_eq!(result[0], true);
-    assert_eq!(result[1], false);
-    assert_eq!(result[2], false);
-}
-
-// matrix of equal dimension
-fn and_2d(matrix1: &Vec<Vec<bool>>, matrix2: &Vec<Vec<bool>>) -> Vec<Vec<bool>> {
-    let mut result = vec![vec![false; matrix1[0].len()]; matrix1.len()];
-    for ((resref, vec1), vec2) in result.iter_mut().zip(matrix1).zip(matrix2) {
-        *resref = and_1d(vec1, vec2)
-    }
-    result
-}
-
-#[test]
-fn test_and_2d() {
-    let mat1 = vec![vec![true, false], vec![false, true]];
-    let mat2 = vec![vec![true, true], vec![true, true]];
-    assert_eq!(
-        and_2d(&mat1, &mat2),
-        vec![vec![true, false], vec![false, true]]
-    );
-    let mat3 = vec![vec![false, false], vec![false, false]];
-    assert_eq!(
-        and_2d(&mat1, &mat3),
-        vec![vec![false, false], vec![false, false]]
-    );
-}
-
-#[test]
-fn test_get_trees_and_find_hidden_ones() {
+fn test_get_trees() {
     let input = "30373\n25512\n65332\n33549\n35390\n".to_string();
     let trees = get_tree_matrix(&input).unwrap();
     let reference: Vec<Vec<u8>> = vec![
@@ -231,28 +190,33 @@ fn test_get_trees_and_find_hidden_ones() {
         vec![3, 5, 3, 9, 0],
     ];
     assert_eq!(trees, reference);
+}
 
+#[test]
+fn test_find_hidden_ones() {
+    let input = "30373\n25512\n65332\n33549\n35390\n".to_string();
+    let trees = get_tree_matrix(&input).unwrap();
     let reference: Vec<Vec<bool>> = vec![
-        vec![false, true, true, false, true],
-        vec![false, false, true, true, true],
-        vec![false, true, true, true, true],
+        vec![false, false, false, false, false],
+        vec![false, false, true, true, false],
+        vec![false, true, true, true, false],
         vec![false, true, false, true, false],
-        vec![false, false, true, false, true],
+        vec![false, false, false, false, false],
     ];
+
+
     assert_eq!(
         get_hidden_matrix_in_direction(&trees, Direction::RIGHT),
         reference
     )
 }
 
+
 fn main() {
     let filepath = Path::new("./input.txt");
     let content = fs::read_to_string(filepath).expect("Couldn't read input.txt");
     let trees = get_tree_matrix(&content).expect("Expecting to be able to read all trees");
     println!("Scanning trees done!");
-    let (width, height) = determine_x_y_width(&content)
-        .expect("Expecting to get a read of the size of the tree field");
-
     println!("Looking from all directions");
     let matrix_left = get_hidden_matrix_in_direction(&trees, Direction::LEFT);
     let matrix_right = get_hidden_matrix_in_direction(&trees, Direction::RIGHT);
